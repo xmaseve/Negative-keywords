@@ -127,6 +127,29 @@ def output(terms, new):
 
 result = output(terms, new)
 
+keywords = pd.read_csv('C:\Users\Qi Yi\Desktop\keywords.csv')
+keywords = keywords.values.tolist()
+
+def existing(keywords):
+    cleanwords = []
+    for i in range(len(keywords)):
+        words = re.sub(r"[^\w]", " ", keywords[i][0]).strip()
+        words = " ".join(words.split())
+        cleanwords.append(words)
+    cleanwords = list(set(cleanwords))
+    return cleanwords
+    
+cleanwords = existing(keywords)
+
+def newkeywords(data, cleanwords):
+    new = []
+    for i in range(len(data)):
+        if data[i][0] not in cleanwords:
+            new.append(data[i][0])
+    return new
+            
+new = newkeywords(data, cleanwords)
+
 searchterm["result"] = result
 searchterm.to_csv('C:\\Users\\Qi Yi\\Desktop\\new search term.csv')
 positive = searchterm.sort(["result"], ascending=False)
