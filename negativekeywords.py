@@ -159,6 +159,13 @@ negative = searchterm[searchterm.result < 0]
 negative = negative.sort(["result"], ascending=True)
 negative.to_csv('C:\\Users\\Qi Yi\\Desktop\\negative keywords.csv')
 
+from nltk.tag import PerceptronTagger
+from nltk.data import find
+PICKLE = "averaged_perceptron_tagger.pickle"
+AP_MODEL_LOC = 'file:'+str(find('taggers/averaged_perceptron_tagger/'+PICKLE))
+tagger = PerceptronTagger(load=False)
+tagger.load(AP_MODEL_LOC)
+pos_tag = tagger.tag
 
 
 
