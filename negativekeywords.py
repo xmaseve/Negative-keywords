@@ -109,7 +109,8 @@ def compute(comb, convs, costs, ncosts):
     return weights
     
 weights = compute(comb, convs, costs, ncosts)
-data1["Weights"] = weights        
+data1["Weights"] = weights     
+neg_keyword = data1.sort_values(["Weights"], ascending=True)   
 df = data1.values.tolist()
 
 '''
@@ -211,5 +212,5 @@ negative = searchterm[searchterm.result < 0]
 negative = negative.sort(["result"], ascending=True)
 negative.to_csv('C:\\Users\\Qi Yi\\Desktop\\negative keywords.csv')
 '''
-data1.to_csv('C:\\Users\\Qi Yi\\Desktop\\data1.csv')
-neg_phrases.to_csv('C:\\Users\\Qi Yi\\Desktop\\phrase.csv')
+neg_keyword.to_csv('C:\\Users\\Qi Yi\\Desktop\\negative keywords.csv')
+neg_phrases.to_csv('C:\\Users\\Qi Yi\\Desktop\\negative phrases.csv')
