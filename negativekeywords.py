@@ -15,7 +15,9 @@ Copy the result of pivot table and paste it in the new Excel file.
 import pandas as pd
 import re 
 import numpy as np
+from textblob import TextBlob
 
+#python -m textblob.download_corpora
 #change your direction according to your needs. 
 searchterm = pd.read_csv('C:\Users\Qi Yi\Desktop\searchterm.csv')
 searchterm.head()
@@ -26,7 +28,7 @@ term.describe()
 data = term.values.tolist()
 terms = term["Row Labels"]
 
-stopwords = ["in","for", "of", "a", "an", "the"]
+#stopwords = ["in","for", "of", "a", "an", "the"]
 
 def preprocess(data):
     cleantext = []
@@ -34,8 +36,8 @@ def preprocess(data):
         letters_only = re.sub("[^a-zA-Z]", " ", data[row][0])
         words=letters_only.split()
         #stop=set(stopwords.words('english'))
-        meanfulwords=[w for w in words if not w in stopwords]
-        cleantext.append(meanfulwords)
+        #meanfulwords=[w for w in words if not w in stopwords]
+        cleantext.append(words)
     return cleantext
 
 cleantext=preprocess(data)
@@ -82,8 +84,6 @@ def calculate(vocabList, data, cleantext):
 costs, convs = calculate(vocabList, data, cleantext)
 data1["Costs"] = costs
 data1["Conversions"] = convs
-
-
 comb = data1.values.tolist()
 
 def noconvCost(comb):
@@ -109,23 +109,28 @@ def compute(comb, convs, costs, ncosts):
     return weights
     
 weights = compute(comb, convs, costs, ncosts)
-data1["Weights"] = weights    
-    
-terms = term["Row Labels"]  
-#terms = terms.values.tolist()      
-new = data1.values.tolist()
+data1["Weights"] = weights        
+df = data1.values.tolist()
 
-def output(terms, new):
+'''
+def output(terms, df):
     result = []
     for i in terms:
         score = 0
-        for j in range(len(new)):
-            if new[j][0] in i:
-                score += new[j][4]
+        for j in range(len(df)):
+            if df[j][0] in i:
+                score += df[j][4]
         result.append(score)
     return result
 
-result = output(terms, new)
+result = output(terms, df)
+searchterm["result"] = result
+'''
+newdata = searchterm.values.tolist()
+
+'''
+Remove the existing keywords from the search terms.
+'''
 
 keywords = pd.read_csv('C:\Users\Qi Yi\Desktop\keywords.csv')
 keywords = keywords.values.tolist()
@@ -145,11 +150,58 @@ def newkeywords(data, cleanwords):
     new = []
     for i in range(len(data)):
         if data[i][0] not in cleanwords:
-            new.append(data[i][0])
+            new.append(data[i])
     return new
             
 new = newkeywords(data, cleanwords)
 
+'''
+PICKLE = "averaged_perceptron_tagger.pickle"
+AP_MODEL_LOC = 'file:'+str(find('taggers/averaged_perceptron_tagger/'+PICKLE))
+tagger = PerceptronTagger(load=False)
+tagger.load(AP_MODEL_LOC)
+pos_tag = tagger.tag
+'''
+
+
+def negPhrase(new):
+    adj = ["JJ", "JJR", "JJS"]
+    noun = ["NN", "NNS", "NNP", "NNPS"]
+    verb = ["VB", "VBZ", "VBP", "VBD", "VBN"]
+
+    phrases = []
+    for i in range(len(new)):
+        blob = TextBlob(new[i][0])
+        tags = blob.tags
+        for j in range(len(tags)):
+            if j + 1 <= len(tags) - 1:
+                if (tags[j][1] in adj or noun or verb) and (tags[j+1][1] in noun):
+                    phrases.append(tags[j][0] + " " + tags[j+1][0])
+                else:
+                    break
+    phrases = list(set(phrases))
+    return phrases
+
+phrases = negPhrase(new)
+    
+def output(phrases, df):
+    result = []
+    for i in phrases:
+        score = 0
+        for j in range(len(df)):
+            if df[j][0] in i:
+                score += df[j][4]
+        result.append(score)
+    return result
+
+result = output(phrases, df)            
+        
+neg_phrases = pd.DataFrame(phrases, columns=["Phrases"])
+neg_phrases["Result"] = result
+neg_phrases = neg_phrases.sort_values(["Result"], ascending = True)
+
+
+'''
 searchterm["result"] = result
 searchterm.to_csv('C:\\Users\\Qi Yi\\Desktop\\new search term.csv')
 positive = searchterm.sort(["result"], ascending=False)
@@ -158,14 +210,6 @@ positive30.to_csv('C:\\Users\\Qi Yi\\Desktop\\positive keywords.csv')
 negative = searchterm[searchterm.result < 0]
 negative = negative.sort(["result"], ascending=True)
 negative.to_csv('C:\\Users\\Qi Yi\\Desktop\\negative keywords.csv')
-
-from nltk.tag import PerceptronTagger
-from nltk.data import find
-PICKLE = "averaged_perceptron_tagger.pickle"
-AP_MODEL_LOC = 'file:'+str(find('taggers/averaged_perceptron_tagger/'+PICKLE))
-tagger = PerceptronTagger(load=False)
-tagger.load(AP_MODEL_LOC)
-pos_tag = tagger.tag
-
-
-
+'''
+data1.to_csv('C:\\Users\\Qi Yi\\Desktop\\data1.csv')
+neg_phrases.to_csv('C:\\Users\\Qi Yi\\Desktop\\phrase.csv')
