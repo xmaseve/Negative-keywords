@@ -5,31 +5,24 @@ Created on Mon Oct 10 14:05:52 2016
 @author: Qi Yi
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 06 09:11:05 2016
-
-@author: Qi Yi
-"""
 
 import pandas as pd
 import re
 
-keywords = pd.read_csv('C:\Users\Qi Yi\Desktop\Keyword report.csv')
-searchquery = pd.read_csv("C:\Users\Qi Yi\Desktop\Search term report.csv")
+keywords = pd.read_csv('C:\Users\Qi Yi\Desktop\Keyword report.csv') #Change your filepath
+searchquery = pd.read_csv("C:\Users\Qi Yi\Desktop\Search term report.csv") #Change your filepath
 keywords = keywords[["Campaign", "Ad group", "Keyword"]]
 searchquery = searchquery[["Campaign", "Ad group", "Search term", "Cost", "Conversions"]]
 
 keywords = keywords.values.tolist()
 
 '''
-process keyword report to slice adgroup data from each campaign
+process search term report to slice adgroup data from each campaign
 '''
-df = searchquery[searchquery.columns[[0,1,2]]]
-campaign = list(df["Campaign"].unique())
+campaign = list(searchquery["Campaign"].unique())
 campaign.sort()
 len(campaign)
-df = df.values.tolist()
+searchterms = searchquery.values.tolist()
 
 def campData(df, CampName):
     camp = []
@@ -78,7 +71,7 @@ def wordFrequency(vocabList, cleantext):
         frequency.append(count)
     return frequency
     
-def seperate(a):
+def seperate_column(a):
     cost = []
     convs = []
     for row in a:
@@ -90,8 +83,8 @@ scan = []
 topwords = []
 for i in campaign:
     
-    term_campdata = campData(df, i) #change the number to change the campaign
-    term_campdata = pd.DataFrame(term_campdata, columns=["Campaign", "Ad group", "Search term"])
+    term_campdata = campData(searchterms, i) #change the number to change the campaign
+    term_campdata = pd.DataFrame(term_campdata, columns=["Campaign", "Ad group", "Search term", "Cost", "Conversions"])
     adgroup = list(term_campdata["Ad group"].unique())
     adgroup.sort()
     term_campdata = term_campdata.values.tolist()
@@ -102,25 +95,10 @@ for i in campaign:
         
         #process search term report to slice adgroup data from each campaign
 
-        #search = searchquery.values.tolist()
-        #term_camp1 = campData(search, i) 
         term_adgroupdata = adgroupData(term_campdata, j)
-        term_adgroupdata = pd.DataFrame(term_adgroupdata, columns=["Campaign", "Ad group", "Search term"])
-        #searchterm1 = list(term_adgroupdata["Search term"].unique())
-        #searchterm1.sort()
-
-        #a = adgroupdata.groupby(["Search term"]).sum()
-        #a = a.values.tolist()
-
-        #cost, convs = seperate(a)
-
-        #new_adgroup1 = pd.DataFrame(searchterm1, columns=["Row Labels"])
-        #new_adgroup1["Cost"] = cost
-        #new_adgroup1["Conversions"] = convs
-
-        #data = adgroupdata.values.tolist()
-        #terms = new_adgroup1["Row Labels"]
-        #adgroup1 = adgroupData(camp1, j)
+        term_adgroupdata = pd.DataFrame(term_adgroupdata, columns=["Campaign", "Ad group", "Search term", "Cost", "Conversions"])
+        searchterm = list(term_adgroupdata["Search term"].unique())
+        searchterm.sort()
 
         #Find the most frequent words in the keywords list
         kw_adgroupdata = adgroupData(kw_campdata, j)
@@ -131,16 +109,20 @@ for i in campaign:
         count = pd.DataFrame(kwList, columns=["Words"])
         count["Frequency"] = frequency
         count = count.sort_values(["Frequency"], ascending=False)
-        top3 = count.Words.head(3)
+        top3 = count.Words.head(3) #change the number of top words
         top3 = top3.values.tolist()
-        #print top3
-        
+        top3.append('rent')  #add a new element into the top3 list
+        top4 = '|'.join(map(re.escape, top3))
         topwords.append(i + ":" + j + "-" + str(top3))
            
-        scan.append(term_adgroupdata[~(term_adgroupdata["Search term"].str.contains('top[0]'))])
-     
-a = pd.concat(scan)  
-topwords.to_csv("C:\\Users\\Qi Yi\\Desktop\\Top words.csv")   
-a.to_csv("C:\\Users\\Qi Yi\\Desktop\\output1.csv")
+        scan.append(term_adgroupdata[~(term_adgroupdata["Search term"].str.contains(top4))]) 
+
+        
+unmatch = pd.concat(scan) 
+topwords = pd.DataFrame(topwords, columns=["Top words"]) 
+#topwords.to_csv("C:\\Users\\Qi Yi\\Desktop\\Top words.csv")   #Change your filepath
+unmatch.to_csv("C:\\Users\\Qi Yi\\Desktop\\output.csv") #Change your filepath
+
+
 
 
